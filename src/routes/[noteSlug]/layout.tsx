@@ -1,6 +1,6 @@
-import { createEventListener } from "@solid-primitives/event-listener";
 import { createStorageSignal } from "@solid-primitives/storage";
 import { format } from "date-fns";
+import { generateSlug } from "random-word-slugs";
 import {
   NavLink,
   Outlet,
@@ -8,39 +8,20 @@ import {
   useLocation,
   useNavigate,
 } from "solid-app-router";
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  For,
-  onCleanup,
-  Show,
-} from "solid-js";
+import { createEffect, createMemo, For, onCleanup, Show } from "solid-js";
 import { uid } from "uid";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { useObserveDeep } from "../../lib/yjs/useObserveDeep";
+import { useSynced } from "../../lib/yjs/useSynced";
 import { showSideBar } from "./store";
 import { NoteMetaObject, notesMetaMap, rootDoc } from "./ydoc";
 
-// function useBeforeUnload(message: string) {
-//   const [, set] = createSignal(false);
-//   onCleanup(() => {
-//     window.removeEventListener("beforeunload", handleBeforeUnload);
-//   });
-//   function handleBeforeUnload(e: BeforeUnloadEvent) {
-//     set(true);
-//     e.preventDefault();
-//     e.returnValue = message;
-//   }
-//   window.addEventListener("beforeunload", handleBeforeUnload);
-// }
-
 const NoteSlugLayout = () => {
-  const [synced, setSynced] = createSignal(false);
-  const location = useLocation();
   const [userId] = createStorageSignal("userId", uid(50));
-
   const rootProvider = new IndexeddbPersistence(userId(), rootDoc);
+  const synced = useSynced(rootProvider, { showDebug: true });
+  const location = useLocation();
+
   // const webrtcProvider = new WebrtcProvider(userId(), rootDoc, {
   //   signaling: ["wss://server.saltyrtc.org:443"],
   // });
@@ -58,10 +39,15 @@ const NoteSlugLayout = () => {
       )
   );
 
-  performance.now();
-  rootProvider.on("synced", () => {
-    console.log(`indexeddb: synced after ${performance.now()} ms`);
-    setSynced(true);
+  createEffect(() => {
+    if (synced() && location.pathname === "/notes") {
+      console.log(location.pathname, notes());
+      if (notes().length > 0) {
+        navigate(`/notes/${notes()[0].slug}`);
+      } else {
+        navigate(`/notes/${generateSlug()}`);
+      }
+    }
   });
 
   onCleanup(() => {
@@ -85,35 +71,10 @@ const NoteSlugLayout = () => {
       navigate(`/notes/${notes()[0].slug}`);
     }
   }
-  const isRouting = useIsRouting();
-
-  // createEffect(() => {
-  //   console.log(isRouting(), location.);
-  // });
-
-  // createEffect(() => {
-  //   const noteSlug = location.pathname.split("/").pop();
-  //   const note = notesMetaMap.get(noteSlug);
-  //   console.log(note);
-  //   if (isRouting() && location && note && note.updatedAt === note.createdAt) {
-  //     console.log(`didn't change`);
-  //   }
-  //   // console.log(p);
-  // });
-
-  // createEventListener(window, "navigate", (e) => {
-  //   console.log("bro", e);
-  //   const noteSlug = location.pathname.split("/").pop();
-  //   const note = notesMetaMap.get(noteSlug);
-  //   console.log(note);
-  //   if (location && note && note.updatedAt === note.createdAt) {
-  //     console.log(`didn't change`);
-  //   }
-  // });
 
   return (
     <div
-      class="flex h-screen overflow-hidden"
+      class="flex h-screen w-screen overflow-hidden"
       classList={{
         invisible: !synced(),
       }}

@@ -161,7 +161,7 @@ const NoteSlugRoute = () => {
   );
 
   return (
-    <div class="grow flex flex-col min-w-screen sm:w-auto">
+    <div class="grow flex flex-col min-w-screen sm:min-w-auto w-full">
       <div class="flex py-2 px-5">
         <button
           type="button"
