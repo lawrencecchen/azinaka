@@ -77,7 +77,8 @@ const NoteSlugLayout = () => {
             </button>
           </div>
         </div>
-        <ul class="p-2 overflow-auto grow pb-4">
+
+        <ul class="p-2 overflow-auto grow pb-4" classList={{}}>
           <For each={notes()}>
             {(note, i) => {
               return (
