@@ -40,13 +40,8 @@ const NoteSlugLayout = () => {
   );
 
   createEffect(() => {
-    if (synced() && location.pathname === "/notes") {
-      console.log(location.pathname, notes());
-      if (notes().length > 0) {
-        navigate(`/notes/${notes()[0].slug}`);
-      } else {
-        navigate(`/notes/${generateSlug()}`);
-      }
+    if (synced() && location.pathname === "/notes" && notes().length > 0) {
+      navigate(`/notes/${notes()[0].slug}`);
     }
   });
 
