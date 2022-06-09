@@ -9,13 +9,16 @@ const App: Component = () => {
   return (
     <Routes>
       <Route path="/notes" element={<NoteSlugLayout />}>
-        <Route path="/" element={<IndexRoute />} />
+        <Route
+          path="/"
+          element={<Navigate href={`/notes/${generateSlug()}`} />}
+        />
         <Route path="/:noteSlug" element={<NoteSlugRoute />} />
       </Route>
       <Route path="/" element={<IndexRoute />} />
       <Route
         path="/notes/new"
-        element={<Navigate href={`/notes/${generateSlug()}`} />}
+        element={<Navigate href={`/notes/${generateSlug()}?new=true`} />}
       />
     </Routes>
   );

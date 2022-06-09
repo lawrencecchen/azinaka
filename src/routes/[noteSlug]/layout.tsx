@@ -1,38 +1,67 @@
+import { createStorageSignal } from "@solid-primitives/storage";
 import { format } from "date-fns";
-import { NavLink, Outlet } from "solid-app-router";
-import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
+import { generateSlug } from "random-word-slugs";
+import {
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "solid-app-router";
+import { createMemo, createSignal, For, onCleanup, Show } from "solid-js";
+import { uid } from "uid";
 import { IndexeddbPersistence } from "y-indexeddb";
-import { NoteMetaObject, notesMeta, rootDoc } from "./ydoc";
+import { useObserveDeep } from "../../lib/yjs/useObserveDeep";
+import { NoteMetaObject, notesMetaMap, rootDoc } from "./ydoc";
 
 const NoteSlugLayout = () => {
-  const [notes, setNotes] = createSignal<NoteMetaObject[]>([]);
   const [synced, setSynced] = createSignal(false);
+  const location = useLocation();
+  const params = useParams();
+  const [userId] = createStorageSignal("userId", uid(50));
 
-  const rootProvider = new IndexeddbPersistence("rootDoc", rootDoc);
+  const rootProvider = new IndexeddbPersistence(userId(), rootDoc);
+  const notesMeta = useObserveDeep(
+    notesMetaMap,
+    (map) => [...map.values()] as NoteMetaObject[]
+  );
+  const notes = createMemo(() =>
+    notesMeta()
+      .filter((n) => !n.deletedAt)
+      .sort((a, b) =>
+        new Date(a.updatedAt).getTime() < new Date(b.updatedAt).getTime()
+          ? 1
+          : -1
+      )
+  );
 
   performance.now();
   rootProvider.on("synced", () => {
-    console.log(`synced after ${performance.now()}ms`);
+    console.log(`synced after ${performance.now()} ms`);
     setSynced(true);
   });
 
   onCleanup(() => {
     rootProvider.destroy();
   });
+  const navigate = useNavigate();
 
-  function handleObserve() {
-    const sorted = [...notesMeta.values()].sort((a, b) =>
-      a.updatedAt < b.updatedAt ? 1 : -1
-    );
-    setNotes(sorted);
-  }
-
-  onMount(() => {
-    notesMeta.observeDeep(handleObserve);
-    onCleanup(() => {
-      notesMeta.unobserveDeep(handleObserve);
+  function handleDelete() {
+    const noteSlug = location.pathname.split("/").pop();
+    const index = notes().findIndex((n) => n.slug === noteSlug);
+    notesMetaMap.set(noteSlug, {
+      ...notesMetaMap.get(noteSlug),
+      deletedAt: new Date().toString(),
     });
-  });
+
+    if (index < notes().length) {
+      navigate(`/notes/${notes()[index].slug}`);
+    } else if (index > 0) {
+      navigate(`/notes/${notes()[index - 1].slug}`);
+    } else {
+      navigate(`/notes/${notes()[0].slug}`);
+    }
+  }
 
   return (
     <div
@@ -41,41 +70,54 @@ const NoteSlugLayout = () => {
         invisible: !synced(),
       }}
     >
-      <ul class="w-70 shrink-0 h-full px-2 py-4">
-        <For each={notes()}>
-          {(note, i) => {
-            return (
-              <li>
-                <NavLink
-                  href={note.slug}
-                  activeClass="bg-neutral-200"
-                  class="px-5 py-3 block rounded-lg cursor-default"
-                  draggable={false}
-                  end
-                >
-                  <div class="font-bold text-neutral-800 text-sm">
-                    {note.title}
-                  </div>
-                  <div class="text-xs mt-1">
-                    <span class="text-neutral-800">
-                      {format(new Date(note.updatedAt), "p")}
-                    </span>
-                    <span class="font-medium text-neutral-500 ml-2">
-                      {note.slug}
-                    </span>
-                  </div>
-                </NavLink>
-                <Show when={i() < notes().length - 1}>
-                  <hr class="mx-8 text-neutral-200 -my-px" />
-                </Show>
-              </li>
-            );
-          }}
-        </For>
+      <div class="w-70 shrink-0 h-full flex flex-col">
+        <div class="flex py-2 px-5">
+          <div class="ml-auto mr-0">
+            <button
+              onClick={handleDelete}
+              type="button"
+              class="px-1.5 -ml-2 hover:bg-neutral-100 active:bg-neutral-100 transition rounded pb-1 cursor-default hover:active:bg-neutral-200 text-neutral-500 hover:active:text-neutral-700"
+            >
+              <div class="i-material-symbols-delete-outline-rounded text-lg" />
+            </button>
+          </div>
+        </div>
+        <ul class="p-2 overflow-auto grow pb-4">
+          <For each={notes()}>
+            {(note, i) => {
+              return (
+                <li>
+                  <NavLink
+                    href={note.slug}
+                    activeClass="bg-neutral-200"
+                    class="px-5 py-3 block rounded-lg cursor-default select-none"
+                    draggable={false}
+                    end
+                  >
+                    <div class="font-bold text-neutral-800 text-sm whitespace-nowrap text-ellipsis overflow-hidden">
+                      {note.title}
+                    </div>
+                    <div class="text-xs mt-1 whitespace-nowrap text-ellipsis overflow-hidden">
+                      <span class="text-neutral-800">
+                        {format(new Date(note.updatedAt), "p")}
+                      </span>
+                      <span class="font-medium text-neutral-500 ml-2">
+                        {note.subtitle}
+                      </span>
+                    </div>
+                  </NavLink>
+                  <Show when={i() < notes().length - 1}>
+                    <hr class="ml-5 mr-2 text-neutral-200 -my-px" />
+                  </Show>
+                </li>
+              );
+            }}
+          </For>
+        </ul>
         {/* <button class="mt-5" onClick={() => rootProvider.clearData()}>
           destroy
         </button> */}
-      </ul>
+      </div>
       <div class="px-1.5 -mx-1.5 flex items-center cursor-ew-resize isolate z-10 pointer-events-none">
         <div class="h-full w-px bg-neutral-200"></div>
       </div>
