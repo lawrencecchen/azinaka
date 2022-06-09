@@ -145,6 +145,7 @@ const Editor = (props: EditorProps) => {
 
   onCleanup(() => {
     prosemirrorView()?.destroy();
+    console.log("foobar");
   });
 
   return <div ref={divRef} class="grow flex flex-col w-full" />;

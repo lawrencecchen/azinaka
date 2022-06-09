@@ -1,12 +1,39 @@
+import { createEventListener } from "@solid-primitives/event-listener";
 import { createStorageSignal } from "@solid-primitives/storage";
 import { format } from "date-fns";
-import { NavLink, Outlet, useLocation, useNavigate } from "solid-app-router";
-import { createMemo, createSignal, For, onCleanup, Show } from "solid-js";
+import {
+  NavLink,
+  Outlet,
+  useIsRouting,
+  useLocation,
+  useNavigate,
+} from "solid-app-router";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  onCleanup,
+  Show,
+} from "solid-js";
 import { uid } from "uid";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { useObserveDeep } from "../../lib/yjs/useObserveDeep";
 import { showSideBar } from "./store";
 import { NoteMetaObject, notesMetaMap, rootDoc } from "./ydoc";
+
+// function useBeforeUnload(message: string) {
+//   const [, set] = createSignal(false);
+//   onCleanup(() => {
+//     window.removeEventListener("beforeunload", handleBeforeUnload);
+//   });
+//   function handleBeforeUnload(e: BeforeUnloadEvent) {
+//     set(true);
+//     e.preventDefault();
+//     e.returnValue = message;
+//   }
+//   window.addEventListener("beforeunload", handleBeforeUnload);
+// }
 
 const NoteSlugLayout = () => {
   const [synced, setSynced] = createSignal(false);
@@ -58,6 +85,27 @@ const NoteSlugLayout = () => {
       navigate(`/notes/${notes()[0].slug}`);
     }
   }
+  const isRouting = useIsRouting();
+
+  // createEffect(() => {
+  //   const noteSlug = location.pathname.split("/").pop();
+  //   const note = notesMetaMap.get(noteSlug);
+  //   console.log(note);
+  //   if (isRouting() && location && note && note.updatedAt === note.createdAt) {
+  //     console.log(`didn't change`);
+  //   }
+  //   // console.log(p);
+  // });
+
+  // createEventListener(window, "navigate", (e) => {
+  //   console.log("bro", e);
+  //   const noteSlug = location.pathname.split("/").pop();
+  //   const note = notesMetaMap.get(noteSlug);
+  //   console.log(note);
+  //   if (location && note && note.updatedAt === note.createdAt) {
+  //     console.log(`didn't change`);
+  //   }
+  // });
 
   return (
     <div
@@ -96,6 +144,7 @@ const NoteSlugLayout = () => {
                     class="px-5 py-3 block rounded-lg cursor-default select-none"
                     draggable={false}
                     end
+                    // onClick={handleNavigate}
                   >
                     <div class="font-bold text-neutral-800 text-sm whitespace-nowrap text-ellipsis overflow-hidden">
                       {note.title}
