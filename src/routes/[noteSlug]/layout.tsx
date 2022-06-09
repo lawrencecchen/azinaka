@@ -41,7 +41,7 @@ const NoteSlugLayout = () => {
         invisible: !synced(),
       }}
     >
-      <ul class="w-70 shrink-0 border-r h-full border-neutral-200 px-2 py-4">
+      <ul class="w-70 shrink-0 h-full px-2 py-4">
         <For each={notes()}>
           {(note, i) => {
             return (
@@ -76,6 +76,9 @@ const NoteSlugLayout = () => {
           destroy
         </button> */}
       </ul>
+      <div class="px-1.5 -mx-1.5 flex items-center cursor-ew-resize isolate z-10 pointer-events-none">
+        <div class="h-full w-px bg-neutral-200"></div>
+      </div>
       <Outlet />
     </div>
   );

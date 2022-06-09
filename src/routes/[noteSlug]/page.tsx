@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { baseKeymap } from "prosemirror-commands";
+import { baseKeymap, toggleMark } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
 import { EditorState } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
@@ -43,19 +43,20 @@ const Editor = (props: EditorProps) => {
     type.observeDeep(handleObserve);
     const prosemirrorView = new EditorView(divRef, {
       state: EditorState.create({
-        schema,
+        schema: schema,
         plugins: [
           ySyncPlugin(type),
           // yCursorPlugin(provider.awareness),
           yUndoPlugin(),
           keymap({
-            ...baseKeymap,
             "Mod-z": undo,
             "Mod-y": redo,
             "Mod-Shift-z": redo,
+            "Mod-b": toggleMark(schema.marks.strong),
+            "Mod-i": toggleMark(schema.marks.em),
           }),
-        ],
-        // .concat(exampleSetup({ schema })),
+          keymap(baseKeymap),
+        ], //.concat(exampleSetup({ schema })),
       }),
     });
 
