@@ -18,7 +18,7 @@ import { useObserveDeep } from "../../lib/yjs/useObserveDeep";
 import { schema } from "./schema";
 import { setShowSideBar } from "./store";
 import "./styles.css";
-import { notesMetaMap, rootDoc } from "./ydoc";
+import { notesMap, rootDoc } from "./ydoc";
 
 type EditorProps = {
   documentName: string;
@@ -50,8 +50,8 @@ const Editor = (props: EditorProps) => {
       return;
     }
     const { title, subtitle } = getMetadata();
-    notesMetaMap.set(props.documentName, {
-      ...notesMetaMap.get(props.documentName),
+    notesMap.set(props.documentName, {
+      ...notesMap.get(props.documentName),
       updatedAt: new Date().toString(),
       title,
       subtitle,
@@ -87,8 +87,8 @@ const Editor = (props: EditorProps) => {
   }
 
   createEffect(() => {
-    if (!notesMetaMap.has(props.documentName)) {
-      notesMetaMap.set(props.documentName, {
+    if (!notesMap.has(props.documentName)) {
+      notesMap.set(props.documentName, {
         title: DEFAULT_TITLE,
         subtitle: DEFAULT_SUBTITLE,
         slug: props.documentName,
@@ -96,8 +96,10 @@ const Editor = (props: EditorProps) => {
         updatedAt: new Date().toString(),
       });
     }
-
+    // const note = notesMap.get(props.documentName);
+    // console.log(note);
     const type = rootDoc.getXmlFragment(props.documentName);
+    // const type = note.xmlFragment; //getXmlFragment(props.documentName);
     type.observeDeep(handleObserve);
     if (prosemirrorView()) {
       prosemirrorView().updateState(
@@ -153,9 +155,7 @@ const Editor = (props: EditorProps) => {
 const NoteSlugRoute = () => {
   const params = useParams();
   const documentName = () => params.noteSlug;
-  const noteMeta = useObserveDeep(notesMetaMap, (map) =>
-    map.get(documentName())
-  );
+  const noteMeta = useObserveDeep(notesMap, (map) => map.get(documentName()));
   const lastUpdated = createMemo(
     () => noteMeta() && new Date(noteMeta().updatedAt)
   );
@@ -182,7 +182,7 @@ const NoteSlugRoute = () => {
       </div>
 
       <div class="grow overflow-auto flex flex-col prose min-w-full">
-        <div class="text-neutral-500 text-sm text-center my-2 not-prose">
+        <div class="text-neutral-500 text-sm text-center my-2 not-prose tabular-nums">
           <Show when={lastUpdated()}>{format(lastUpdated(), "PPPp")}</Show>
         </div>
         <Editor documentName={documentName()} />
