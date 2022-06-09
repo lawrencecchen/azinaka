@@ -1,13 +1,6 @@
 import { createStorageSignal } from "@solid-primitives/storage";
 import { format } from "date-fns";
-import { generateSlug } from "random-word-slugs";
-import {
-  NavLink,
-  Outlet,
-  useLocation,
-  useNavigate,
-  useParams,
-} from "solid-app-router";
+import { NavLink, Outlet, useLocation, useNavigate } from "solid-app-router";
 import { createMemo, createSignal, For, onCleanup, Show } from "solid-js";
 import { uid } from "uid";
 import { IndexeddbPersistence } from "y-indexeddb";
@@ -17,10 +10,12 @@ import { NoteMetaObject, notesMetaMap, rootDoc } from "./ydoc";
 const NoteSlugLayout = () => {
   const [synced, setSynced] = createSignal(false);
   const location = useLocation();
-  const params = useParams();
   const [userId] = createStorageSignal("userId", uid(50));
 
   const rootProvider = new IndexeddbPersistence(userId(), rootDoc);
+  // const webrtcProvider = new WebrtcProvider(userId(), rootDoc, {
+  //   signaling: ["wss://server.saltyrtc.org:443"],
+  // });
   const notesMeta = useObserveDeep(
     notesMetaMap,
     (map) => [...map.values()] as NoteMetaObject[]
@@ -37,7 +32,7 @@ const NoteSlugLayout = () => {
 
   performance.now();
   rootProvider.on("synced", () => {
-    console.log(`synced after ${performance.now()} ms`);
+    console.log(`indexeddb: synced after ${performance.now()} ms`);
     setSynced(true);
   });
 

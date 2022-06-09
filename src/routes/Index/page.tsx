@@ -3,7 +3,7 @@ import { Link } from "solid-app-router";
 const IndexRoute = () => {
   return (
     <div class="max-w-3xl p-4 mx-auto py-20">
-      <h1 class="text-3xl font-bold">Azinaki</h1>
+      <h1 class="text-3xl font-bold">Azinaka</h1>
 
       <p class="my-4">Browser based Notes that syncs with git.</p>
 
