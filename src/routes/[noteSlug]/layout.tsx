@@ -1,59 +1,80 @@
 import { format } from "date-fns";
 import { NavLink, Outlet } from "solid-app-router";
-import { createEffect, createSignal, For, onMount } from "solid-js";
+import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { IndexeddbPersistence } from "y-indexeddb";
-import { NoteMeta, notesMeta, rootDoc } from "./ydoc";
+import { NoteMetaObject, notesMeta, rootDoc } from "./ydoc";
 
 const NoteSlugLayout = () => {
-  const [notes, setNotes] = createSignal<NoteMeta[]>([]);
+  const [notes, setNotes] = createSignal<NoteMetaObject[]>([]);
+  const [synced, setSynced] = createSignal(false);
 
-  onMount(() => {
-    // const provider = new IndexeddbPersistence(`rootDoc`, rootDoc);
-    // notesMeta.values
-    notesMeta.observe(() => {
-      const sorted = [...notesMeta.values()].sort((a, b) =>
-        a.createdAt < b.createdAt ? 1 : -1
-      );
-      setNotes(sorted);
-    });
+  const rootProvider = new IndexeddbPersistence("rootDoc", rootDoc);
 
-    // console.log(notes());
-    return () => {
-      // provider.destroy();
-    };
+  performance.now();
+  rootProvider.on("synced", () => {
+    console.log(`synced after ${performance.now()}ms`);
+    setSynced(true);
   });
 
-  createEffect(() => {
-    console.log(notes());
+  onCleanup(() => {
+    rootProvider.destroy();
+  });
+
+  function handleObserve() {
+    const sorted = [...notesMeta.values()].sort((a, b) =>
+      a.updatedAt < b.updatedAt ? 1 : -1
+    );
+    setNotes(sorted);
+  }
+
+  onMount(() => {
+    notesMeta.observeDeep(handleObserve);
+    onCleanup(() => {
+      notesMeta.unobserveDeep(handleObserve);
+    });
   });
 
   return (
-    <div class="flex h-screen overflow-hidden">
+    <div
+      class="flex h-screen overflow-hidden"
+      classList={{
+        invisible: !synced(),
+      }}
+    >
       <ul class="w-70 shrink-0 border-r h-full border-neutral-200 px-2 py-4">
         <For each={notes()}>
-          {(note) => (
-            <li class="mt-1">
-              <NavLink
-                href={note.slug}
-                activeClass="bg-neutral-200"
-                class="px-5 py-2 block rounded"
-                end
-              >
-                <div class="font-bold text-neutral-800 text-sm">
-                  {note.title}
-                </div>
-                <div class="text-xs mt-1">
-                  <span class="text-neutral-800">
-                    {format(new Date(note.createdAt), "p")}
-                  </span>
-                  <span class="font-medium text-neutral-500 ml-2">
-                    {note.slug}
-                  </span>
-                </div>
-              </NavLink>
-            </li>
-          )}
+          {(note, i) => {
+            return (
+              <li>
+                <NavLink
+                  href={note.slug}
+                  activeClass="bg-neutral-200"
+                  class="px-5 py-3 block rounded-lg cursor-default"
+                  draggable={false}
+                  end
+                >
+                  <div class="font-bold text-neutral-800 text-sm">
+                    {note.title}
+                  </div>
+                  <div class="text-xs mt-1">
+                    <span class="text-neutral-800">
+                      {format(new Date(note.updatedAt), "p")}
+                    </span>
+                    <span class="font-medium text-neutral-500 ml-2">
+                      {note.slug}
+                    </span>
+                  </div>
+                </NavLink>
+                <Show when={i() < notes().length - 1}>
+                  <hr class="mx-8 text-neutral-200 -my-px" />
+                </Show>
+              </li>
+            );
+          }}
         </For>
+        {/* <button class="mt-5" onClick={() => rootProvider.clearData()}>
+          destroy
+        </button> */}
       </ul>
       <Outlet />
     </div>

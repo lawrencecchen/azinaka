@@ -1,23 +1,14 @@
-import { Link, useNavigate, useParams } from "solid-app-router";
-import { createEffect, onMount } from "solid-js";
-import * as Y from "yjs";
-import {
-  ySyncPlugin,
-  yCursorPlugin,
-  yUndoPlugin,
-  undo,
-  redo,
-} from "y-prosemirror";
-import { EditorState } from "prosemirror-state";
-import { schema } from "./schema";
-import { EditorView } from "prosemirror-view";
-import { IndexeddbPersistence } from "y-indexeddb";
-import { keymap } from "prosemirror-keymap";
-import { exampleSetup } from "prosemirror-example-setup";
-import "./styles.css";
 import { format } from "date-fns";
-import { notesMeta, rootDoc, notesData } from "./ydoc";
 import { baseKeymap } from "prosemirror-commands";
+import { keymap } from "prosemirror-keymap";
+import { EditorState } from "prosemirror-state";
+import { EditorView } from "prosemirror-view";
+import { Link, useParams } from "solid-app-router";
+import { createEffect, createSignal, onCleanup, onMount, Show } from "solid-js";
+import { redo, undo, ySyncPlugin, yUndoPlugin } from "y-prosemirror";
+import { schema } from "./schema";
+import "./styles.css";
+import { notesMeta, rootDoc } from "./ydoc";
 
 type EditorProps = {
   documentName: string;
@@ -25,22 +16,31 @@ type EditorProps = {
 
 const Editor = (props: EditorProps) => {
   let divRef: HTMLDivElement;
+  let mounted = false;
+
+  function handleObserve() {
+    if (!mounted) {
+      mounted = true;
+      return;
+    }
+    notesMeta.set(props.documentName, {
+      ...notesMeta.get(props.documentName),
+      updatedAt: new Date().toString(),
+    });
+  }
 
   createEffect(() => {
-    if (!notesData.has(props.documentName)) {
-      rootDoc.transact(() => {
-        notesData.set(props.documentName, new Y.Doc());
-        notesMeta.set(props.documentName, {
-          createdAt: new Date().toString(),
-          updatedAt: new Date().toString(),
-          slug: props.documentName,
-          title: "New Note",
-        });
+    if (!notesMeta.has(props.documentName)) {
+      notesMeta.set(props.documentName, {
+        title: "New Note",
+        slug: props.documentName,
+        createdAt: new Date().toString(),
+        updatedAt: new Date().toString(),
       });
     }
-    const subDoc = notesData.get(props.documentName);
-    const provider = new IndexeddbPersistence(props.documentName, subDoc);
-    const type = subDoc.getXmlFragment("prosemirror");
+
+    const type = rootDoc.getXmlFragment(props.documentName);
+    type.observeDeep(handleObserve);
     const prosemirrorView = new EditorView(divRef, {
       state: EditorState.create({
         schema,
@@ -59,11 +59,10 @@ const Editor = (props: EditorProps) => {
       }),
     });
 
-    return () => {
-      provider.destroy();
+    onCleanup(() => {
       prosemirrorView.destroy();
-      // subDoc.destroy();
-    };
+      type.unobserveDeep(handleObserve);
+    });
   });
 
   return <div ref={divRef} class="grow flex flex-col w-full" />;
@@ -71,25 +70,41 @@ const Editor = (props: EditorProps) => {
 
 const NoteSlugRoute = () => {
   const params = useParams();
-  const lastUpdated = new Date();
+  const documentName = () => params.noteSlug;
+  const [lastUpdated, setLastUpdated] = createSignal<Date>();
+  function handleObserve() {
+    const obj = notesMeta.get(documentName());
+    if (obj) {
+      setLastUpdated(new Date(obj.updatedAt));
+    }
+  }
+  onMount(() => {
+    notesMeta.observe(handleObserve);
+    onCleanup(() => {
+      notesMeta.unobserve(handleObserve);
+    });
+  });
+  createEffect(() => {
+    documentName() && handleObserve();
+  });
 
   return (
     <div class="grow flex flex-col">
-      <div class="flex py-2 px-5 bg-white/80 backdrop-blur-2xl">
+      <div class="flex py-2 px-5">
         <Link
           href="/notes/new"
-          class="px-1.5 -ml-2 hover:bg-neutral-100 transition rounded pb-1 cursor-default active:bg-neutral-200"
+          class="px-1.5 -ml-2 hover:bg-neutral-100 active:bg-neutral-100 transition rounded pb-1 cursor-default hover:active:bg-neutral-200 text-neutral-500 hover:active:text-neutral-700"
           draggable={false}
         >
-          <span class="i-fluent-compose-16-filled text-lg text-neutral-500"></span>
+          <span class="i-fluent-compose-16-filled text-lg "></span>
         </Link>
       </div>
 
       <div class="grow overflow-auto flex flex-col">
         <div class="text-neutral-500 text-sm text-center my-2">
-          {format(lastUpdated, "PPPp")}
+          <Show when={lastUpdated()}>{format(lastUpdated(), "PPPp")}</Show>
         </div>
-        <Editor documentName={params.noteSlug} />
+        <Editor documentName={documentName()} />
       </div>
     </div>
   );

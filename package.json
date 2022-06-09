@@ -9,10 +9,10 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@unocss/preset-mini": "^0.34.0",
-    "@unocss/vite": "^0.34.0",
-    "typescript": "^4.6.4",
-    "vite": "^2.9.9",
+    "@unocss/preset-mini": "^0.38.1",
+    "@unocss/vite": "^0.38.1",
+    "typescript": "^4.7.3",
+    "vite": "^2.9.10",
     "vite-plugin-solid": "^2.2.6"
   },
   "dependencies": {
@@ -31,9 +31,11 @@
     "prosemirror-view": "^1.26.0",
     "random-word-slugs": "^0.1.6",
     "solid-app-router": "^0.3.3",
-    "solid-js": "^1.4.2",
+    "solid-js": "^1.4.3",
+    "solid-transition-group": "^0.0.10",
     "y-indexeddb": "^9.0.7",
     "y-prosemirror": "^1.1.2",
+    "y-webrtc": "^10.2.3",
     "yjs": "^13.5.38"
   }
 }
