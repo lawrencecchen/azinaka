@@ -88,6 +88,10 @@ const NoteSlugLayout = () => {
   const isRouting = useIsRouting();
 
   // createEffect(() => {
+  //   console.log(isRouting(), location.);
+  // });
+
+  // createEffect(() => {
   //   const noteSlug = location.pathname.split("/").pop();
   //   const note = notesMetaMap.get(noteSlug);
   //   console.log(note);
