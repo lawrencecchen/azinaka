@@ -5,6 +5,7 @@ import { createMemo, createSignal, For, onCleanup, Show } from "solid-js";
 import { uid } from "uid";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { useObserveDeep } from "../../lib/yjs/useObserveDeep";
+import { showSideBar } from "./store";
 import { NoteMetaObject, notesMetaMap, rootDoc } from "./ydoc";
 
 const NoteSlugLayout = () => {
@@ -65,7 +66,13 @@ const NoteSlugLayout = () => {
         invisible: !synced(),
       }}
     >
-      <div class="w-70 shrink-0 h-full flex flex-col">
+      <div
+        class="w-70 shrink-0 h-screen flex-col sm:flex"
+        classList={{
+          hidden: !showSideBar(),
+          flex: showSideBar(),
+        }}
+      >
         <div class="flex py-2 px-5">
           <div class="ml-auto mr-0">
             <button
@@ -78,7 +85,7 @@ const NoteSlugLayout = () => {
           </div>
         </div>
 
-        <ul class="p-2 overflow-auto grow pb-4" classList={{}}>
+        <ul class="p-2 overflow-auto grow pb-4 min-h-0">
           <For each={notes()}>
             {(note, i) => {
               return (

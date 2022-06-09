@@ -16,6 +16,7 @@ import { redo, undo, ySyncPlugin, yUndoPlugin } from "y-prosemirror";
 import { YXmlFragment } from "yjs/dist/src/internals";
 import { useObserveDeep } from "../../lib/yjs/useObserveDeep";
 import { schema } from "./schema";
+import { setShowSideBar } from "./store";
 import "./styles.css";
 import { notesMetaMap, rootDoc } from "./ydoc";
 
@@ -160,12 +161,21 @@ const NoteSlugRoute = () => {
   );
 
   return (
-    <div class="grow flex flex-col">
+    <div class="grow flex flex-col min-w-screen sm:w-auto">
       <div class="flex py-2 px-5">
+        <button
+          type="button"
+          class="px-1.5 -ml-2 hover:bg-neutral-100 mr-3 sm:hidden active:bg-neutral-100 transition rounded pb-1 cursor-default hover:active:bg-neutral-200 text-neutral-500 hover:active:text-neutral-700"
+          aria-label="Open menu"
+          onClick={() => setShowSideBar((s) => !s)}
+        >
+          <span class="i-material-symbols-menu-rounded text-lg"></span>
+        </button>
         <Link
           href={`/notes/${generateSlug()}?new=true`}
           class="px-1.5 -ml-2 hover:bg-neutral-100 active:bg-neutral-100 transition rounded pb-1 cursor-default hover:active:bg-neutral-200 text-neutral-500 hover:active:text-neutral-700"
           draggable={false}
+          aria-label="New note"
         >
           <span class="i-fluent-compose-16-filled text-lg"></span>
         </Link>
